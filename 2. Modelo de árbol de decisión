@@ -1,0 +1,285 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyNHZlUPuqO9BfU+3VmN0S6q",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/Salomerb-hub/Business-Analytics/blob/main/2.%20Modelo%20de%20%C3%A1rbol%20de%20decisi%C3%B3n\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "MODELO DE ÁRBOL DE DECISIÓN - PROBABILIDAD DE QUE LOS JUGADORES COMPREN EN LA APLICACIÓN\n",
+        "\n",
+        "0. Cargar las librerias"
+      ],
+      "metadata": {
+        "id": "ZHgstt5ntAkI"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import pandas as pd\n",
+        "import numpy as np\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "#Se trae el modelo, para eso necesitamos hjacer un préstamo interbibliotecario\n",
+        "from sklearn.tree import DecisionTreeClassifier #Préstamo interbibliotecario"
+      ],
+      "metadata": {
+        "id": "1NZwj1rltKpf"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "1. Se cargan los datos"
+      ],
+      "metadata": {
+        "id": "e8Nle5xntQIx"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "nxl=\"/content/2. BD2_In_App_Pur_Int.xlsx\"\n",
+        "XDB=pd.read_excel(nxl,sheet_name=0)\n",
+        "XDB= XDB.dropna()   #Evitar las celdas vacías\n",
+        "XDB.head()\n",
+        "\n",
+        "#Seleccionamos las variables de interés\n",
+        "XD=XDB[['Age','Income','Years','Hours']]\n",
+        "XD.head()\n",
+        "XD=np.array(XD)   #Convierto la tabla en números - Variables de Entrada\n",
+        "yd=XDB[['Buy']]; yd=np.array(yd)  #Variable de Salida, que la aprenda el modelo - convierto la tabla en números"
+      ],
+      "metadata": {
+        "id": "gCBpRIfVtShX"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "2. Construcción del modelo de árbol de decisión para saber la probabilidad de que los jugadores compren en la aplicación"
+      ],
+      "metadata": {
+        "id": "rBZrXcl9vOmF"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "mar=DecisionTreeClassifier(criterion='gini',max_depth=4)\n",
+        "mar.fit(XD,yd)\n",
+        "ydp=mar.predict(XD)    #Estos valores de pronóstico sirven para evaluar el modelo.\n",
+        "\n",
+        "#Evaluamos el modelo\n",
+        "from sklearn.metrics import confusion_matrix\n",
+        "cm=confusion_matrix(yd,ydp)\n",
+        "VN=cm[0,0]\n",
+        "FP=cm[0,1]\n",
+        "FN=cm[1,0]\n",
+        "VP=cm[1,1]\n",
+        "\n",
+        "Ex=(VP+VN)/(VP+VN+FP+FN)\n",
+        "Se=VP/(VP+FN)\n",
+        "Es=VN/(VN+FP)\n",
+        "\n",
+        "print('Exactitud:',Ex)\n",
+        "print('Sensibilidad:',Se)\n",
+        "print('Especificidad:',Es)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "zrQQqkLgvYUL",
+        "outputId": "f675e4b5-4e9d-4a5b-b034-17747c441cf0"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Exactitud: 0.8475\n",
+            "Sensibilidad: 0.9478672985781991\n",
+            "Especificidad: 0.7354497354497355\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "3. Visualización del árbol de decisión"
+      ],
+      "metadata": {
+        "id": "DfYHNqxfvoYY"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from sklearn.tree import export_graphviz    #Para la estructura del Árbol\n",
+        "from pydotplus import graph_from_dot_data   #Para dictaminar qué datos le voy a colocar\n",
+        "\n",
+        "vs=['Age','Income','Years','Hours']    #Estos nombres aparecen en el árbol\n",
+        "\n",
+        "dot_data=export_graphviz(mar,feature_names=vs)    #Para asegurar nombres del gráfico\n",
+        "graph=graph_from_dot_data(dot_data)               #Se hace el gráfico del Árbol\n",
+        "graph.write_png('árbolreto2.png')                      #Se crea la impagen png"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 217
+        },
+        "id": "uTquQIHmvrSx",
+        "outputId": "22af012b-2860-47c6-c107-0efaa118149d"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "NameError",
+          "evalue": "name 'mar' is not defined",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mNameError\u001b[0m                                 Traceback (most recent call last)",
+            "\u001b[0;32m<ipython-input-1-bf470e475f19>\u001b[0m in \u001b[0;36m<cell line: 6>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      4\u001b[0m \u001b[0mvs\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m'Age'\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m'Income'\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m'Years'\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m'Hours'\u001b[0m\u001b[0;34m]\u001b[0m    \u001b[0;31m#Estos nombres aparecen en el árbol\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      5\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 6\u001b[0;31m \u001b[0mdot_data\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mexport_graphviz\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mmar\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0mfeature_names\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mvs\u001b[0m\u001b[0;34m)\u001b[0m    \u001b[0;31m#Para asegurar nombres del gráfico\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      7\u001b[0m \u001b[0mgraph\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mgraph_from_dot_data\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mdot_data\u001b[0m\u001b[0;34m)\u001b[0m               \u001b[0;31m#Se hace el gráfico del Árbol\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      8\u001b[0m \u001b[0mgraph\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mwrite_png\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'árbolreto2.png'\u001b[0m\u001b[0;34m)\u001b[0m                      \u001b[0;31m#Se crea la impagen png\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mNameError\u001b[0m: name 'mar' is not defined"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "4. Probabilidades del jugador 1 y 2"
+      ],
+      "metadata": {
+        "id": "rqHLTN-6hu_g"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "XDB2=pd.read_excel(nxl, sheet_name=1)\n",
+        "XDB2=XDB2[['Age','Income','Years','Hours']]\n",
+        "XDB2= XDB2.dropna()   #Evitar las celdas vacías\n",
+        "\n",
+        "#Convertirlos en un array\n",
+        "XD2=np.array(XDB2)\n",
+        "ydp2=mar.predict(XD2)\n",
+        "XDB2['Buy']=ydp2\n",
+        "XDB2.head()\n",
+        "\n",
+        "XDB2.to_excel('Jugadores 1 y 2.xlsx')\n",
+        "\n",
+        "#Para contar cuántos fueron aprobados y negados (sumar los 1 y los 0, entonces me da la cantidad de los que compran que son 1)\n",
+        "np.sum(ydp2)\n",
+        "len(ydp2)-np.sum(ydp2)\n",
+        "\n",
+        "print('Jugadores que compran:',np.sum(ydp2))\n",
+        "print('Jugadores que no compran:',len(ydp2)-np.sum(ydp2))\n",
+        "\n",
+        "\n"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "3wom9sXwh6zP",
+        "outputId": "3396445c-7656-4f2d-de67-0409f6b5f465"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Jugadores que compran: 1\n",
+            "Jugadores que no compran: 1\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "**ANÁLISIS DE RESULTADOS**\n",
+        "\n",
+        "De acuerdo con la base de datos se puede observar un total de 400 jugadores, divididos en 211 sjugadores que compran (52,7%), y un total de 189 solicitantes PreNegados (47,2%). De acuerdo con lo anterior, el modelo de árbol arrojó un índice de exactitud cercano al 85%, así como índices de Sensibilidad cercano al 95% que muestran el comportamient dentro del modelo frente a la calsificación de los jugadores que compran dentro de la aplicación. Frente al índice de especificidad se ve un porcentaje cercano al 74%, el cual mide el comportamiento del modelo en la clasificación de jugadores que no compran dentro de la aplicación.\n",
+        "\n",
+        "Es importante mencionar que un modelo que exhiba valores de exactitud (accuracy) por encima del 75%, es considerado un modelo aceptable para el pronóstico de los datos, lo cual en este caso sucede.\n",
+        "\n",
+        "Para la base de datos de jugadores 1 y 2 (2 solicitantes), se puede observar que el modelo clasificó un total de 1 (50%) en la categoría de jugadores que compran y un total de 1 (50%) en la categoría de jugadores que no compran.\n",
+        "\n",
+        "\n",
+        "\n",
+        "**Preguntas de análisis:**\n",
+        "\n",
+        "**1.** Determinar las métricas de exactitud general, sensibilidad, especificidad:\n",
+        "  \n",
+        "  **Exactitud:** 84.7%\n",
+        "  **Sensibilidad:** 94.8%\n",
+        "  **Especificidad:** 73.5%\n",
+        "\n",
+        "  **2.** De acuerdo con los nuevos casos que agrupa la base de datos In_App_Pur_Socre, ¿determinar cuál es la probabilidad de que el primer jugador haga compras dentro de la aplicación?, ¿Cuál es la probabilidad para el segundo jugador?\n",
+        "\n",
+        "  **Jugador 1:** 33% de probabilidad de que NO haga compras en la aplicación - 67% de probabilidad de que haga compras en la aplicación.\n",
+        "\n",
+        "  **Jugador 2:** 100% de probabilidad de que NO haga compras en la aplicación.\n",
+        "\n",
+        "  **3.** Indicar cuales son las reglas que poseen nodos puros\n",
+        "\n",
+        "  **Nodo puro [5-0]:** Si Income > 63.5 AND Years <= 1.5 AND Years <= 0.5 AND Age > 23\n",
+        "\n",
+        "  **Nodo puro [28-0]:** Si Income > 63.5 AND Years <= 1.5 AND Years > 0.5\n",
+        "\n",
+        "  **4.** Determinar las reglas para los nuevos casos.\n",
+        "\n",
+        "  **Jugador 1:** Si Income > 63.5 AND Years > 1.5 AND Years <= 5.5 AND Income > 76.5\n",
+        "\n",
+        "  **Juagador 2:** Si Income > 63.5 AND Years <= 1.5 AND Years > 0.5\n",
+        "\n",
+        "  **5.** Determinar el porcentaje que una persona utilice la tarjeta de crédito para la siguiente regla SI Income>63.5 AND Years>1.5 AND Years>5.5 AND Income<=137.5:\n",
+        "  \n",
+        "  R/ [11-121] 8% de probabilidad de que no haga compras dentro de la aplicación y 92% de probabilidad de que haga compras dentro de la aplicación\n",
+        "\n",
+        "\n",
+        "\n",
+        "\n"
+      ],
+      "metadata": {
+        "id": "IeGAYHSowHJE"
+      }
+    }
+  ]
+}
